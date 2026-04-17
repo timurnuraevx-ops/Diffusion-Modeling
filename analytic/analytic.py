@@ -12,8 +12,8 @@ plt.title("Зависимость среднего квадрата радиус
 plt.xlabel("Время, с")
 plt.ylabel("Среднее квадратичное расстояния до центра, м^2")
 
-coeffs = np.polyfit(t, R, deg=1)
-print(f"D = {coeffs[0] / 6} м^2 / c")
+coeffs, cov = np.polyfit(t, R, deg=1, cov=True)
+print(f"D = {coeffs[0] / 6} м^2 / c, {cov[0][0] ** 0.5}")
 
 x = np.linspace(t[0], t[-1], 100)
 y = np.polyval(coeffs, x)
