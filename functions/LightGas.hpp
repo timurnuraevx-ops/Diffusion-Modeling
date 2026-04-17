@@ -1,0 +1,22 @@
+#pragma once
+#include "Particle.hpp"
+#include "BackgroundGas.hpp"
+#include <string>
+#include <vector>
+
+class LightGas {
+ private: 
+  std::vector<Particle> particles_;
+  BackgroundGas gas_;
+
+ public:
+  double dt = 0.0;
+  double t = 0.0;
+
+  LightGas() = default;
+  LightGas(std::vector<Particle>, double, BackgroundGas, double);
+  static LightGas InitPointSource(const std::string&);
+  void Update();
+  double GetAverageQuadraticRadius();
+  void LaunchPointSourceSimulation(const std::string&, const std::string&);
+};

@@ -1,0 +1,48 @@
+#include "BackgroundGas.hpp"
+#include <fstream>
+#include <random>
+#include <string>
+#include <nlohmann/json.hpp>
+
+BackgroundGas::BackgroundGas(double T, double mu, double n, double d, double R) : T_(T), mu_(mu), n_(n), d_(d), R(R) {
+}
+
+BackgroundGas BackgroundGas::FromJson(const std::string& json_file_path) {
+  std::ifstream file(json_file_path);
+
+  nlohmann::json j;
+  file >> j;
+
+  double T = j["BackgroundGas"].value("T", 300.0);
+  double mu = j["BackgroundGas"].value("mu", 0.029);
+  double n = j["BackgroundGas"].value("n", 2.414323855e+25);
+  double R = j["Constants"].value("R", 8.31);
+  double d = j["BackgroundGas"].value("d", 2.2e-10);
+    
+  return BackgroundGas(T, mu, n, d, R);
+}
+
+double BackgroundGas::GetT() const {
+  return T_;
+}
+
+double BackgroundGas::GetMu() const {
+  return mu_;
+}
+
+double BackgroundGas::GetN() const {
+  return n_;
+}
+
+double BackgroundGas::GetD() const {
+  return d_;
+}
+
+double BackgroundGas::GetVelocityComp() const {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  double scale = std::pow(R * T_ / mu_, 0.5);
+  std::normal_distribution<> dist(0.0, scale);
+  return dist(gen);
+}
