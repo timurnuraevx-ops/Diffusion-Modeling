@@ -15,8 +15,10 @@ class LightGas {
 
   LightGas() = default;
   LightGas(std::vector<Particle>, double, BackgroundGas, double);
+
   static LightGas InitPointSource(const std::string&);
+  void SaveToVTP(const std::string& filename) const;
   void Update();
   double GetAverageQuadraticRadius();
-  void LaunchPointSourceSimulation(const std::string&, const std::string&);
+  void LaunchPointSourceSimulation(const std::string&, const std::string&, const std::string&);
 };

@@ -21,8 +21,7 @@ plt.plot(x, y)
 plt.savefig("plot.png", dpi=150)
 
 n = 2.414323855e+25
-sigma = np.pi * (3.6e-10 + 2.2e-10) ** 2 / 4
-lambda_ = 1 / (2 ** 0.5 * n * sigma)
-v_av = (8 * 8.31 * 300 / (np.pi * 0.004)) ** 0.5
+sigma = np.pi * (3.6e-10 + 2.2e-10) ** 2
+v_av = (2 * np.pi * 8.31 * 300 / ((0.004 * 0.029 / (0.004 + 0.029)))) ** 0.5
 
-print(f"D теоретически равен {v_av * lambda_ / 3}")
+print(f"D теоретически равен {v_av * 3 /(sigma * n * 8)}")

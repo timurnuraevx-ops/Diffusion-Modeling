@@ -37,18 +37,47 @@ void Particle::InitializeVelocitities() {
   v_z_ = dist(gen);
 }
 
+double Particle::GetVelocityModule() const {
+  return std::pow(v_x_ * v_x_ + v_y_ * v_y_ + v_z_ * v_z_, 0.5);
+}
+
+double Particle::GetX() const {
+  return x_;
+}
+
+double Particle::GetY() const {
+  return y_;
+}
+
+double Particle::GetZ() const {
+  return z_;
+}
+
+double Particle::GetVx() const {
+  return v_x_;
+}
+
+double Particle::GetVy() const {
+  return v_y_;
+}
+
+double Particle::GetVz() const {
+  return v_z_;
+}
+
+
 void Particle::Collision(const BackgroundGas& gas) {
   double back_v_x = gas.GetVelocityComp();
   double back_v_y = gas.GetVelocityComp();
   double back_v_z = gas.GetVelocityComp();
 
-  double center_v_x = (v_x_ * mu_ + back_v_x) / (mu_ + gas.GetMu());
-  double center_v_y = (v_y_ * mu_ + back_v_y) / (mu_ + gas.GetMu());
-  double center_v_z = (v_z_ * mu_ + back_v_z) / (mu_ + gas.GetMu());
+  double center_v_x = (v_x_ * mu_ + back_v_x * gas.GetMu()) / (mu_ + gas.GetMu());
+  double center_v_y = (v_y_ * mu_ + back_v_y * gas.GetMu()) / (mu_ + gas.GetMu());
+  double center_v_z = (v_z_ * mu_ + back_v_z * gas.GetMu()) / (mu_ + gas.GetMu());
 
-  v_x_ = center_v_x - v_x_;
-  v_y_ = center_v_y - v_y_;
-  v_z_ = center_v_z - v_z_;
+  v_x_ = 2 * center_v_x - v_x_;
+  v_y_ = 2 * center_v_y - v_y_;
+  v_z_ = 2 * center_v_z - v_z_;
 }
 
 bool Particle::CheckCollision(const BackgroundGas& gas, double dt) {

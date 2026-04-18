@@ -29,7 +29,7 @@
 ## Запуск
 
 ```bash
-c++ main.cpp           # запуск симуляции, запись в results.txt
+c++ main.cpp           # запуск симуляции, запись в results.csv
 python analytic.py     # анализ и построение графиков
 ```
 

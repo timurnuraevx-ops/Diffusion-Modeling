@@ -26,6 +26,14 @@ class Particle {
   Particle() = default;
   static Particle InitPointSource(const std::string&);
 
+  double GetVelocityModule() const;
+  double GetX() const;
+  double GetY() const;
+  double GetZ() const;
+  double GetVx() const;
+  double GetVy() const;
+  double GetVz() const;
+
   double GetQuadraticRadius() const;
   void Collision(const BackgroundGas&);
   void InitializeVelocitities();
