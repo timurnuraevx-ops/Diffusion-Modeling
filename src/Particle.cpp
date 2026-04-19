@@ -6,12 +6,20 @@
 #include <cmath>
 
 Particle::Particle(double mu, double d, double x, double y, double z,
-                        double v_x, double v_y, double v_z, double T, double R) :
-                        mu_(mu), d_(d), x_(x), y_(y), z_(z), v_x_(v_x), v_y_(v_y), v_z_(v_z), T_(T), R_(R) {
+                  double x0, double y0, double z0, double v_x, double v_y, double v_z, double T, double R) :
+                  mu_(mu), d_(d), x_(x), y_(y), z_(z), x0_(x0), y0_(y0), z0_(z0), v_x_(v_x), v_y_(v_y), v_z_(v_z), T_(T), R_(R) {
 }
 
-Particle Particle::InitPointSource(double T, double mu, double R, double d) {
-  Particle p(mu, d, 0, 0, 0, 0, 0, 0, T, R);
+Particle Particle::InitSource(double T, double mu, double R, double d, double a, double b, double c) {
+  static thread_local std::mt19937 gen(std::random_device{}());
+  static thread_local std::uniform_real_distribution<> dist(0.0, 1.0);
+  double x = dist(gen);
+  double y = dist(gen);
+  double z = dist(gen);
+  x *= a;
+  y *= b;
+  z *= c;
+  Particle p(mu, d, x, y, z, x, y, z, 0.0, 0.0, 0.0, T, R);
   p.InitializeVelocitities();
   return p;
 }
@@ -92,5 +100,8 @@ void Particle::Update(const BackgroundGas& gas, double dt) {
 }
 
 double Particle::GetQuadraticRadius() const {
-  return x_ * x_ + y_ * y_ + z_ * z_;
+  double x = (x_ - x0_);
+  double y = (y_ - y0_);
+  double z = (z_ - z0_);
+  return x * x + y * y + z * z;
 }

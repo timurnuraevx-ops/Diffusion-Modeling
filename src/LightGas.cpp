@@ -18,7 +18,7 @@ LightGas::LightGas(std::vector<Particle> particles, double dt, BackgroundGas gas
                     : particles_(particles), dt(dt), gas_(gas), t(t) {
 }
 
-LightGas LightGas::InitPointSource(const std::string& json_file_name) {
+LightGas LightGas::InitSource(const std::string& json_file_name) {
   std::ifstream file(json_file_name);
 
   nlohmann::json j;
@@ -31,12 +31,24 @@ LightGas LightGas::InitPointSource(const std::string& json_file_name) {
   double mu = j["Light gas"].value("mu", 0.004);
   double d = j["Light gas"].value("d", 2.2e-10);
   double R = j["Constants"].value("R", 8.31);
+  double a = j["Source"].value("a", 1e-6);
+  double b = j["Source"].value("b", 1e-6);;
+  double c = j["Source"].value("c", 1e-6);;
 
   std::vector<Particle> particles(N);
+  std::string source_type = j["Simulation"];
+
+  if (source_type == "Point source") {
+    a = 0.0;
+    b = 0.0;
+    c = 0.0;
+  } else if (source_type == "Flat source") {
+    c = 0.0;
+  }
 
   #pragma omp parallel for
   for (int32_t i = 0; i < N; i++) {
-    particles[i] = Particle::InitPointSource(T, mu, R, d);
+    particles[i] = Particle::InitSource(T, mu, R, d, a, b, c);
   }
   return LightGas(particles, dt, gas, 0.0);
 } 

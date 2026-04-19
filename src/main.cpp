@@ -6,7 +6,7 @@
 
 
 int main() {
-  LightGas helium = LightGas::InitPointSource("/home/timurn/ВычФиз/diffusion project/config/config.json");
+  LightGas helium = LightGas::InitSource("/home/timurn/ВычФиз/diffusion project/config/config.json");
   helium.LaunchSimulation("/home/timurn/ВычФиз/diffusion project/results/results.csv", 
                                     "/home/timurn/ВычФиз/diffusion project/config/config.json",
                                     "/home/timurn/ВычФиз/diffusion project/results/vtk/");

@@ -13,6 +13,10 @@ class Particle {
   double y_ = 0.0;
   double z_ = 0.0;
 
+  double x0_ = 0.0;
+  double y0_ = 0.0;
+  double z0_ = 0.0;
+
   double v_x_ = 0.0;
   double v_y_ = 0.0;
   double v_z_ = 0.0;
@@ -22,9 +26,10 @@ class Particle {
 
  public:
 
-  Particle(double, double, double, double, double, double, double, double, double, double);
+  Particle(double, double, double, double, double, double,
+          double, double, double, double, double, double, double);
   Particle() = default;
-  static Particle InitPointSource(double, double, double, double);
+  static Particle InitSource(double, double, double, double, double, double, double);
 
   double GetVelocityModule() const;
   double GetX() const;
