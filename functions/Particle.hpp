@@ -18,13 +18,13 @@ class Particle {
   double v_z_ = 0.0;
 
   double T_ = 0.0;
+  double R_ = 0.0;
 
  public:
-  double R = 0.0;
 
   Particle(double, double, double, double, double, double, double, double, double, double);
   Particle() = default;
-  static Particle InitPointSource(const std::string&);
+  static Particle InitPointSource(double, double, double, double);
 
   double GetVelocityModule() const;
   double GetX() const;
@@ -37,7 +37,7 @@ class Particle {
   double GetQuadraticRadius() const;
   void Collision(const BackgroundGas&);
   void InitializeVelocitities();
-  bool CheckCollision(const BackgroundGas&, double);
+  bool CheckCollision(const BackgroundGas&, double) const;
 
   void Update(const BackgroundGas&, double);
 };

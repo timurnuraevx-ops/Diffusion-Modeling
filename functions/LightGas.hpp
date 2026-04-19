@@ -20,5 +20,5 @@ class LightGas {
   void SaveToVTP(const std::string& filename) const;
   void Update();
   double GetAverageQuadraticRadius();
-  void LaunchPointSourceSimulation(const std::string&, const std::string&, const std::string&);
+  void LaunchSimulation(const std::string&, const std::string&, const std::string&);
 };

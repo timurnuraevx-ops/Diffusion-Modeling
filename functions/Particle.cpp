@@ -7,34 +7,23 @@
 
 Particle::Particle(double mu, double d, double x, double y, double z,
                         double v_x, double v_y, double v_z, double T, double R) :
-                        mu_(mu), d_(d), x_(x), y_(y), z_(z), v_x_(v_x), v_y_(v_y), v_z_(v_z), T_(T), R(R) {
+                        mu_(mu), d_(d), x_(x), y_(y), z_(z), v_x_(v_x), v_y_(v_y), v_z_(v_z), T_(T), R_(R) {
 }
 
-Particle Particle::InitPointSource(const std::string& json_file_path) {
-  std::ifstream file(json_file_path);
-
-  nlohmann::json j;
-  file >> j;
-
-  double mu = j["Light gas"].value("mu", 0.004);
-  double T = j["Light gas"].value("T", 300);
-  double R = j["Constants"].value("R", 8.31);
-  double d = j["Light gas"].value("d", 2.2e-10);
-
+Particle Particle::InitPointSource(double T, double mu, double R, double d) {
   Particle p(mu, d, 0, 0, 0, 0, 0, 0, T, R);
   p.InitializeVelocitities();
   return p;
 }
 
 void Particle::InitializeVelocitities() {
-  std::random_device rd;
-  std::mt19937 gen(rd());
+  static thread_local std::mt19937 gen(std::random_device{}());
+  static thread_local std::normal_distribution<> dist(0.0, 1.0);
 
-  double scale = std::pow(R * T_ / mu_, 0.5);
-  std::normal_distribution<> dist(0.0, scale);
-  v_x_ = dist(gen);
-  v_y_ = dist(gen);
-  v_z_ = dist(gen);
+  double scale = std::pow(R_ * T_ / mu_, 0.5);
+  v_x_ = dist(gen) * scale;
+  v_y_ = dist(gen) * scale;
+  v_z_ = dist(gen) * scale;
 }
 
 double Particle::GetVelocityModule() const {
@@ -80,9 +69,8 @@ void Particle::Collision(const BackgroundGas& gas) {
   v_z_ = 2 * center_v_z - v_z_;
 }
 
-bool Particle::CheckCollision(const BackgroundGas& gas, double dt) {
-  std::random_device rd;
-  std::mt19937 gen(rd());
+bool Particle::CheckCollision(const BackgroundGas& gas, double dt) const {
+  std::mt19937 gen(std::random_device{}());
 
   double v_abs = (v_x_ * v_x_ + v_y_ * v_y_ + v_z_ * v_z_);
   v_abs = std::pow(v_abs, 0.5);
@@ -90,7 +78,7 @@ bool Particle::CheckCollision(const BackgroundGas& gas, double dt) {
   double P = gas.GetN() * sigma * v_abs * dt;
   std::uniform_real_distribution<> dist(0.0, 1.0);
   double r = dist(gen);
-    
+
   return r < P;
 }
 

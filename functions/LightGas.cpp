@@ -27,14 +27,22 @@ LightGas LightGas::InitPointSource(const std::string& json_file_name) {
 
   double dt = j["Constants"].value("dt", 1e-12);
   int32_t N = j["Constants"].value("N", 100);
+  double T = j["Light gas"].value("T", 300);
+  double mu = j["Light gas"].value("mu", 0.004);
+  double d = j["Light gas"].value("d", 2.2e-10);
+  double R = j["Constants"].value("R", 8.31);
+
   std::vector<Particle> particles(N);
+
+  #pragma omp parallel for
   for (int32_t i = 0; i < N; i++) {
-    particles[i] = Particle::InitPointSource(json_file_name);
+    particles[i] = Particle::InitPointSource(T, mu, R, d);
   }
   return LightGas(particles, dt, gas, 0.0);
 } 
 
 void LightGas::Update() {
+  #pragma omp parallel for
   for (size_t i = 0; i < particles_.size(); i++) {
     particles_[i].Update(gas_, dt);
   }
@@ -43,14 +51,16 @@ void LightGas::Update() {
 
 double LightGas::GetAverageQuadraticRadius() {
   double r = 0;
-  for (auto& p : particles_) {
-    r += p.GetQuadraticRadius();
+
+  #pragma omp parallel for reduction(+:r) default(none) shared(particles_)
+  for (int32_t i = 0; i < static_cast<int32_t>(particles_.size()); i++) {
+    r += particles_[i].GetQuadraticRadius();
   }
   r /= static_cast<double>(particles_.size());
   return r;
 }
 
-void LightGas::LaunchPointSourceSimulation(const std::string& filename, const std::string& json_file_name,
+void LightGas::LaunchSimulation(const std::string& filename, const std::string& json_file_name,
                                           const std::string& vtk_path) {
   std::ifstream jsonfile(json_file_name);
 
@@ -96,6 +106,7 @@ void LightGas::SaveToVTP(const std::string& filename) const {
   speed->SetNumberOfTuples(N);
 
   double px, py, pz, vx, vy, vz;
+
   for (size_t i = 0; i < N; ++i) {
     px = particles_[i].GetX();
     py = particles_[i].GetY();

@@ -7,9 +7,9 @@ class BackgroundGas {
   double mu_ = 0.0;
   double n_ = 0.0;
   double d_ = 0.0;
+  double R_ = 0.0;
 
  public:
-  double R = 0.0;
   BackgroundGas(double, double, double, double, double);
   BackgroundGas() = default;
 

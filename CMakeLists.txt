@@ -15,6 +15,7 @@ add_library(diffusion_functions STATIC ${SOURCE_LIB})
 
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(VTK REQUIRED COMPONENTS CommonCore CommonDataModel IOXML)
+find_package(OpenMP REQUIRED)
 
 target_include_directories(diffusion_functions 
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/functions)
@@ -25,6 +26,7 @@ target_link_libraries(diffusion_functions
         VTK::CommonCore
         VTK::CommonDataModel
         VTK::IOXML
+        OpenMP::OpenMP_CXX 
 )
 
 add_executable(main main.cpp)

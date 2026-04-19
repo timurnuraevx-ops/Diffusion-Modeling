@@ -4,7 +4,7 @@
 #include <string>
 #include <nlohmann/json.hpp>
 
-BackgroundGas::BackgroundGas(double T, double mu, double n, double d, double R) : T_(T), mu_(mu), n_(n), d_(d), R(R) {
+BackgroundGas::BackgroundGas(double T, double mu, double n, double d, double R) : T_(T), mu_(mu), n_(n), d_(d), R_(R) {
 }
 
 BackgroundGas BackgroundGas::FromJson(const std::string& json_file_path) {
@@ -39,10 +39,9 @@ double BackgroundGas::GetD() const {
 }
 
 double BackgroundGas::GetVelocityComp() const {
-  std::random_device rd;
-  std::mt19937 gen(rd());
+  static thread_local std::mt19937 gen(std::random_device{}());
+  static thread_local std::normal_distribution<> dist(0.0, 1.0);
 
-  double scale = std::pow(R * T_ / mu_, 0.5);
-  std::normal_distribution<> dist(0.0, scale);
-  return dist(gen);
+  double scale = std::pow(R_ * T_ / mu_, 0.5);
+  return dist(gen) * scale;
 }
