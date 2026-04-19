@@ -6,9 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(diffusion)
 
 set(SOURCE_LIB 
-    functions/BackgroundGas.cpp
-    functions/LightGas.cpp
-    functions/Particle.cpp
+    src/BackgroundGas.cpp
+    src/LightGas.cpp
+    src/Particle.cpp
 )
 
 add_library(diffusion_functions STATIC ${SOURCE_LIB})
@@ -18,7 +18,7 @@ find_package(VTK REQUIRED COMPONENTS CommonCore CommonDataModel IOXML)
 find_package(OpenMP REQUIRED)
 
 target_include_directories(diffusion_functions 
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/functions)
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/includes)
 
 target_link_libraries(diffusion_functions 
     PRIVATE 
@@ -29,9 +29,9 @@ target_link_libraries(diffusion_functions
         OpenMP::OpenMP_CXX 
 )
 
-add_executable(main main.cpp)
+add_executable(main src/main.cpp)
 
-target_link_libraries(main 
+target_Link_libraries(main
     PRIVATE diffusion_functions
 )
 
