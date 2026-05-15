@@ -5,12 +5,15 @@
 #include <nlohmann/json.hpp>
 #include <cmath>
 
-Particle::Particle(double mu, double d, double x, double y, double z,
-                  double x0, double y0, double z0, double v_x, double v_y, double v_z, double T, double R) :
-                  mu_(mu), d_(d), x_(x), y_(y), z_(z), x0_(x0), y0_(y0), z0_(z0), v_x_(v_x), v_y_(v_y), v_z_(v_z), T_(T), R_(R) {
+Particle::Particle(double mu, double x, double y, double z,
+                  double x0, double y0, double z0, double v_x, double v_y, double v_z, double T, double R,
+                  double sigma0, double sigma, double T0, double omega) :
+                  mu_(mu), x_(x), y_(y), z_(z), x0_(x0), y0_(y0), z0_(z0), v_x_(v_x), v_y_(v_y), v_z_(v_z), T_(T), R_(R),
+                  sigma0_(sigma0), sigma_(sigma), T0_(T0), omega_(omega) {
 }
 
-Particle Particle::InitSource(double T, double mu, double R, double d, double a, double b, double c) {
+Particle Particle::InitSource(double T, double T_back, double mu, double R, double sigma0,
+                              double T0, double omega, double a, double b, double c) {
   static thread_local std::mt19937 gen(std::random_device{}());
   static thread_local std::uniform_real_distribution<> dist(0.0, 1.0);
   double x = dist(gen);
@@ -19,7 +22,8 @@ Particle Particle::InitSource(double T, double mu, double R, double d, double a,
   x *= a;
   y *= b;
   z *= c;
-  Particle p(mu, d, x, y, z, x, y, z, 0.0, 0.0, 0.0, T, R);
+  double sigma = sigma0 * std::pow(T0 / T, omega);
+  Particle p(mu, x, y, z, x, y, z, 0.0, 0.0, 0.0, T, R, sigma0, sigma, T0, omega);
   p.InitializeVelocitities();
   return p;
 }
@@ -62,11 +66,10 @@ double Particle::GetVz() const {
   return v_z_;
 }
 
-
-void Particle::Collision(const BackgroundGas& gas) {
-  double back_v_x = gas.GetVelocityComp();
-  double back_v_y = gas.GetVelocityComp();
-  double back_v_z = gas.GetVelocityComp();
+void Particle::Collision(const BackgroundGas& gas, std::array<double, 3> arr) {
+  double back_v_x = arr[0];
+  double back_v_y = arr[1];
+  double back_v_z = arr[2];
 
   double center_v_x = (v_x_ * mu_ + back_v_x * gas.GetMu()) / (mu_ + gas.GetMu());
   double center_v_y = (v_y_ * mu_ + back_v_y * gas.GetMu()) / (mu_ + gas.GetMu());
@@ -77,25 +80,40 @@ void Particle::Collision(const BackgroundGas& gas) {
   v_z_ = 2 * center_v_z - v_z_;
 }
 
-bool Particle::CheckCollision(const BackgroundGas& gas, double dt) const {
-  std::mt19937 gen(std::random_device{}());
+std::optional<std::array<double, 3>> Particle::CheckCollision(const BackgroundGas& gas, double dt) const {
 
-  double v_abs = (v_x_ * v_x_ + v_y_ * v_y_ + v_z_ * v_z_);
-  v_abs = std::pow(v_abs, 0.5);
-  double sigma = 3.141592 * std::pow(d_ + gas.GetD(), 2) / 4;
-  double P = gas.GetN() * sigma * v_abs * dt;
-  std::uniform_real_distribution<> dist(0.0, 1.0);
+  double v_x_back = gas.GetVelocityComp();
+  double v_y_back = gas.GetVelocityComp();
+  double v_z_back = gas.GetVelocityComp();
+
+  double v_x = (v_x_ - v_x_back);
+  double v_y = (v_y_ - v_y_back);
+  double v_z = (v_z_ - v_z_back);
+  double v = std::sqrt(v_x * v_x + v_y * v_y + v_z * v_z); // относительная скорость
+
+  double P = 1 - std::exp(-gas.GetN() * sigma_ * v * dt);
+
+  static thread_local std::mt19937 gen(std::random_device{}());
+  static thread_local std::uniform_real_distribution<> dist(0.0, 1.0);
   double r = dist(gen);
+  if (r < P) {
+    return std::array<double, 3>{v_x_back, v_y_back, v_z_back};
+  }
+  return std::nullopt;
+}
 
-  return r < P;
+void Particle::UpdateSigma(const BackgroundGas& gas) {
+  sigma_ = sigma0_ * std::pow(T0_ / gas.GetT(), omega_);
 }
 
 void Particle::Update(const BackgroundGas& gas, double dt) {
   x_ += v_x_ * dt;
   y_ += v_y_ * dt;
   z_ += v_z_ * dt;
-  if (CheckCollision(gas, dt)) {
-    Collision(gas);
+  UpdateSigma(gas);
+  auto back_v = CheckCollision(gas, dt);
+  if (back_v) {
+    Collision(gas, *back_v);
   }
 }
 

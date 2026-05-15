@@ -34,6 +34,10 @@ LightGas LightGas::InitSource(const std::string& json_file_name) {
   double a = j["Source"].value("a", 1e-6);
   double b = j["Source"].value("b", 1e-6);;
   double c = j["Source"].value("c", 1e-6);;
+  double sigma0 = j["gas-kinetic cross-section"].value("sigma0", 3.3e-19);
+  double omega = j["gas-kinetic cross-section"].value("omega", 0.67);
+  double T0 = j["gas-kinetic cross-section"].value("T0", 273.0);
+  double T_back = j["BackgroundGas"].value("T", 300.0);
 
   std::vector<Particle> particles(N);
   std::string source_type = j["Simulation"];
@@ -48,7 +52,7 @@ LightGas LightGas::InitSource(const std::string& json_file_name) {
 
   #pragma omp parallel for
   for (int32_t i = 0; i < N; i++) {
-    particles[i] = Particle::InitSource(T, mu, R, d, a, b, c);
+    particles[i] = Particle::InitSource(T, T_back, mu, R, sigma0, T0, omega, a, b, c);
   }
   return LightGas(particles, dt, gas, 0.0);
 } 

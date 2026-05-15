@@ -36,11 +36,12 @@ class DiffusionAnalytic:
         self.mu_light = self.config["Light gas"]["mu"]
         self.mu_back = self.config["BackgroundGas"]["mu"]
         self.R = self.config["Constants"]["R"]
-        self.d_light = self.config["Light gas"]["d"]
-        self.d_back = self.config["BackgroundGas"]["d"]
         self.T_back = self.config["BackgroundGas"]["T"]
         self.T_light = self.config["Light gas"]["T"]
         self.n = self.config["BackgroundGas"]["n"]
+        self.T0 = self.config["gas-kinetic cross-section"]["T0"]
+        self.omega = self.config["gas-kinetic cross-section"]["omega"]
+        self.sigma0 = self.config["gas-kinetic cross-section"]["sigma0"]
     
     @property
     def TheorD(self):
@@ -284,4 +285,4 @@ class DiffusionAnalytic:
         plt.savefig(full_path)
 
 diff = DiffusionAnalytic("config.json", "results.csv")
-print(diff.DiffusionTemperatureGraph(1000, 8, "main", "config.json", "results.csv", "график зависимости коэффициента диффузии от температуры"))
+print(diff.LinearDiffusionNGraph(24.1434e25, 10, "main", "config.json", "results.csv", "линеаризованный график зависимости коэффициента диффузии от концентрации"))
