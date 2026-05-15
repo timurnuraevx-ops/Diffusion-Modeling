@@ -102,6 +102,7 @@ class DiffusionAnalytic:
         D = []
         for t in T:
             self.config["BackgroundGas"]["T"] = t
+            self.config["Light gas"]["T"] = t
         
             with open(self.json_file, 'w') as f:
                 json.dump(self.config, f, indent=4)
@@ -129,7 +130,7 @@ class DiffusionAnalytic:
                                 json_file_name: str, results_file_name: str, graphic_name: str):
         '''
         Аналогичен предыдущему пункту, но на этот раз линеаризует
-        график коэффициента диффузии от температуры, D ~ √T
+        график коэффициента диффузии от температуры, D ~ T ** (3/2 + omega)
         '''
         folder = "../build"
         full_path = os.path.join(folder, cpp_file_name)
@@ -138,6 +139,7 @@ class DiffusionAnalytic:
         D = []
         for t in T:
             self.config["BackgroundGas"]["T"] = t
+            self.config["Light gas"]["T"] = t
         
             with open(self.json_file, 'w') as f:
                 json.dump(self.config, f, indent=4)
@@ -151,7 +153,7 @@ class DiffusionAnalytic:
             D.append(self.GetD)
         
         D = np.array(D)
-        T = np.power(T, 0.5)
+        T = np.power(T, 0.5 + self.omega)
         plt.scatter(T, D)
 
         coeffs = np.polyfit(T, D, 1)
@@ -162,6 +164,51 @@ class DiffusionAnalytic:
         plt.title("График зависимости коэффициента диффузии от корня температуры")
         plt.ylabel("Коэффициент диффузии")
         plt.xlabel("корень температуры, К ** 0.5")
+
+        folder = 'graphics/'
+        full_path = os.path.join(folder, graphic_name)
+        plt.savefig(full_path)
+        return coeffs[0]
+
+    def LogarifmicDiffusionTemperatureGraph(self, T_final: float, n: int, cpp_file_name: str,
+                                json_file_name: str, results_file_name: str, graphic_name: str):
+        '''
+        Аналогичен предыдущему пункту, но на этот раз линеаризует
+        график коэффициента диффузии от температуры, ln(D) ~ ln(T)
+        '''
+        folder = "../build"
+        full_path = os.path.join(folder, cpp_file_name)
+
+        T = np.linspace(self.T_back, T_final, n)
+        D = []
+        for t in T:
+            self.config["BackgroundGas"]["T"] = t
+            self.config["Light gas"]["T"] = t
+        
+            with open(self.json_file, 'w') as f:
+                json.dump(self.config, f, indent=4)
+            
+            result = subprocess.run(
+                [full_path],
+                capture_output=True,
+                text=True
+            )
+            self.__init__(json_file_name, results_file_name)
+            D.append(self.GetD)
+        
+        D = np.array(D)
+        T = np.log(T)
+        D = np.log(D)
+        plt.scatter(T, D)
+
+        coeffs = np.polyfit(T, D, 1)
+        x = np.linspace(T[0], T[-1], 100)
+        y = np.polyval(coeffs, x)
+
+        plt.plot(x, y)
+        plt.title("График зависимости ln(D)(ln(T))")
+        plt.ylabel("ln(D)")
+        plt.xlabel("ln(T)")
 
         folder = 'graphics/'
         full_path = os.path.join(folder, graphic_name)
@@ -248,19 +295,20 @@ class DiffusionAnalytic:
         plt.savefig(full_path)
         return coeffs[0]
 
-    def DiffusionMuGraph(self, mu_final: str, n: int, cpp_file_name: str,
+    def LogarifmicDiffusionNGraph(self, n_final: str, N: int, cpp_file_name: str,
                         json_file_name: str, results_file_name: str, graphic_name: str):
         '''
-        Аналогично предыдущим методам, только строит 
-        график зависимости коэффициента диффузии от молярной массы фонового газа
+        Метод аналогичен предыдущему, но линеаризует зависимость 
+        диффузии от концентрации как ln(D)(ln(n)), возвращает коэффициент наклона
         '''
+
         folder = "../build"
         full_path = os.path.join(folder, cpp_file_name)
 
-        mu = np.linspace(self.mu_back, mu_final, n)
+        n = np.linspace(self.n, n_final, N)
         D = []
-        for i in mu:
-            self.config["BackgroundGas"]["mu"] = i
+        for i in n:
+            self.config["BackgroundGas"]["n"] = i
         
             with open(self.json_file, 'w') as f:
                 json.dump(self.config, f, indent=4)
@@ -273,10 +321,55 @@ class DiffusionAnalytic:
             self.__init__(json_file_name, results_file_name)
             D.append(self.GetD)
         
+        n = np.log(n)
+        D = np.array(D)
+        D = np.log(D)
+        plt.scatter(n, D)
+
+        coeffs = np.polyfit(n, D, 1)
+        x = np.linspace(n[0], n[-1], 100)
+        y = np.polyval(coeffs, x)
+        plt.plot(x, y)
+
+        plt.title("График зависимости ln(D)(ln(n))")
+        plt.ylabel("ln(D)")
+        plt.xlabel("ln(n)")
+
+        folder = 'graphics/'
+        full_path = os.path.join(folder, graphic_name)
+        plt.savefig(full_path)
+        return coeffs[0]
+
+    def DiffusionMuGraph(self, mu_final: str, n: int, cpp_file_name: str,
+                        json_file_name: str, results_file_name: str, graphic_name: str):
+        '''
+        Аналогично предыдущим методам, только строит 
+        график зависимости коэффициента диффузии от приведенной массы газа
+        '''
+        folder = "../build"
+        full_path = os.path.join(folder, cpp_file_name)
+
+        mu = np.linspace(self.mu_back, mu_final, n)
+        D = []
+        for i in mu:
+            self.config["Light gas"]["mu"] = i
+        
+            with open(self.json_file, 'w') as f:
+                json.dump(self.config, f, indent=4)
+            
+            result = subprocess.run(
+                [full_path],
+                capture_output=True,
+                text=True
+            )
+            self.__init__(json_file_name, results_file_name)
+            D.append(self.GetD)
+        
+        mu = mu * self.mu_back / (self.mu_back + mu)
         D = np.array(D)
         plt.plot(mu, D)
 
-        plt.title("График зависимости коэффициента диффузии от молярной массы фонового газа")
+        plt.title("График зависимости коэффициента диффузии от молярной массы")
         plt.ylabel("Коэффициент диффузии")
         plt.xlabel("Молярная масса, кг/моль")
 
@@ -284,5 +377,44 @@ class DiffusionAnalytic:
         full_path = os.path.join(folder, graphic_name)
         plt.savefig(full_path)
 
+    def LogarifmicDiffusionMuGraph(self, mu_final: str, n: int, cpp_file_name: str,
+                        json_file_name: str, results_file_name: str, graphic_name: str):
+        '''
+        Аналогично предыдущим методам, только строит 
+        график зависимости ln(D)(ln(n))
+        '''
+        folder = "../build"
+        full_path = os.path.join(folder, cpp_file_name)
+
+        mu = np.linspace(self.mu_back, mu_final, n)
+        D = []
+        for i in mu:
+            self.config["Light gas"]["mu"] = i
+        
+            with open(self.json_file, 'w') as f:
+                json.dump(self.config, f, indent=4)
+            
+            result = subprocess.run(
+                [full_path],
+                capture_output=True,
+                text=True
+            )
+            self.__init__(json_file_name, results_file_name)
+            D.append(self.GetD)
+        
+        mu = mu * self.mu_back / (self.mu_back + mu)
+        D = np.array(D)
+        D = np.log(D)
+        mu = np.log(mu)
+        plt.plot(mu, D)
+
+        plt.title("График зависимости ln(D)(ln(mu))")
+        plt.ylabel("ln(D)")
+        plt.xlabel("ln(mu)")
+
+        folder = 'graphics/'
+        full_path = os.path.join(folder, graphic_name)
+        plt.savefig(full_path)
+
 diff = DiffusionAnalytic("config.json", "results.csv")
-print(diff.LinearDiffusionNGraph(24.1434e25, 10, "main", "config.json", "results.csv", "линеаризованный график зависимости коэффициента диффузии от концентрации"))
+print(diff.LogarifmicDiffusionTemperatureGraph(1000, 10, "main", "config.json", "results.csv", "temp"))
