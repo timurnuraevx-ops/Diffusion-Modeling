@@ -90,13 +90,7 @@ class Particle {
       gas - фоновый газ
       dt - шаг по времени
   */
-  std::optional<std::array<double, 3>> CheckCollision(const BackgroundGas&, double) const;
-
-  /*
-  Метод обновляет газокинетическое сечение молекулы
-  */
-  void UpdateSigma(const BackgroundGas&) ;
-
+  std::optional<std::array<double, 3>> CheckCollision(const BackgroundGas&, double);
   /*
   Обновляет координаты молекулы, проверяет было ли столкновение
   и если было то меняет скорость молекулы

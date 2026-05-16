@@ -80,8 +80,7 @@ void Particle::Collision(const BackgroundGas& gas, std::array<double, 3> arr) {
   v_z_ = 2 * center_v_z - v_z_;
 }
 
-std::optional<std::array<double, 3>> Particle::CheckCollision(const BackgroundGas& gas, double dt) const {
-
+std::optional<std::array<double, 3>> Particle::CheckCollision(const BackgroundGas& gas, double dt) {
   double v_x_back = gas.GetVelocityComp();
   double v_y_back = gas.GetVelocityComp();
   double v_z_back = gas.GetVelocityComp();
@@ -90,8 +89,13 @@ std::optional<std::array<double, 3>> Particle::CheckCollision(const BackgroundGa
   double v_y = (v_y_ - v_y_back);
   double v_z = (v_z_ - v_z_back);
   double v = std::sqrt(v_x * v_x + v_y * v_y + v_z * v_z); // относительная скорость
+  double mu_reduced = (mu_ * gas.GetMu()) / (mu_ + gas.GetMu());
+  double v_ref = std::sqrt(2.0 * R_ * T0_ / mu_reduced);
 
-  double P = 1 - std::exp(-gas.GetN() * sigma_ * v * dt);
+  const double v_min = 10.0;
+  double v_safe = std::max(v, v_min); // защита от деления на 0
+  sigma_ = sigma0_ * std::pow(v_ref / v_safe, 2.0 * omega_);
+  double P = 1 - std::exp(-gas.GetN() * sigma_ * v_safe * dt);
 
   static thread_local std::mt19937 gen(std::random_device{}());
   static thread_local std::uniform_real_distribution<> dist(0.0, 1.0);
@@ -102,18 +106,25 @@ std::optional<std::array<double, 3>> Particle::CheckCollision(const BackgroundGa
   return std::nullopt;
 }
 
-void Particle::UpdateSigma(const BackgroundGas& gas) {
-  sigma_ = sigma0_ * std::pow(T0_ / gas.GetT(), omega_);
-}
 
 void Particle::Update(const BackgroundGas& gas, double dt) {
-  x_ += v_x_ * dt;
-  y_ += v_y_ * dt;
-  z_ += v_z_ * dt;
-  UpdateSigma(gas);
+  static thread_local std::mt19937 gen(std::random_device{}());
+  static thread_local std::uniform_real_distribution<> dist(0.0, 1.0);
+
   auto back_v = CheckCollision(gas, dt);
   if (back_v) {
+    double tau = dt * dist(gen);
+    x_ += v_x_ * tau;
+    y_ += v_y_ * tau;
+    z_ += v_z_ * tau;
     Collision(gas, *back_v);
+    x_ += v_x_ * (dt - tau);
+    y_ += v_y_ * (dt - tau);
+    z_ += v_z_ * (dt - tau);
+  } else {
+    x_ += v_x_ * dt;
+    y_ += v_y_ * dt;
+    z_ += v_z_ * dt;
   }
 }
 

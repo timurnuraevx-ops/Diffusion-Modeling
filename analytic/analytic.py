@@ -48,9 +48,10 @@ class DiffusionAnalytic:
         '''
         Метод возвращает теоретическое значение коэффициента диффузии
         '''
-        sigma = np.pi * (self.d_back + self.d_light) ** 2
-        v_av = (2 * np.pi * self.R * self.T_back / ((self.mu_back * self.mu_light) / (self.mu_light + self.mu_back))) ** 0.5
-        return v_av * 3 / (sigma * self.n * 8)
+        T = self.T_back
+        mu_red = self.mu_back * self.mu_light / (self.mu_back + self.mu_light)
+        sigma = self.sigma0 * np.power(self.T0 / T, self.omega)
+        return np.pow(self.R * T / (3 * mu_red), 0.5) / (self.n * sigma) /2
     
     def TimeRadiusGraph(self, graphic_name: str):
         '''
@@ -62,7 +63,7 @@ class DiffusionAnalytic:
         plt.scatter(self.t, self.average_quadratic_radius)
         plt.title("График среднего квадратического расстояния, пройденного молекулами от времени")
         plt.xlabel("Время, с")
-        plt.ylabel("Среднее квалратическое расстояние м^2")
+        plt.ylabel("Среднее квадратическое расстояние м^2")
         coeffs = np.polyfit(self.t, self.average_quadratic_radius, 1)
         x = np.linspace(self.t[0], self.t[-1], 100)
         y = np.polyval(coeffs, x)
@@ -71,7 +72,7 @@ class DiffusionAnalytic:
         folder = 'graphics/'
         full_path = os.path.join(folder, graphic_name)
         plt.savefig(full_path)
-    
+
     @property
     def GetD(self):
         '''
@@ -215,7 +216,7 @@ class DiffusionAnalytic:
         plt.savefig(full_path)
         return coeffs[0]
 
-    def DiffusionNGraph(self, n_final: str, N: int, cpp_file_name: str,
+    def DiffusionNGraph(self, n_final: float, N: int, cpp_file_name: str,
                         json_file_name: str, results_file_name: str, graphic_name: str):
         '''
         Строит график зависимости коэффициента диффузии от концентрации
@@ -251,13 +252,12 @@ class DiffusionAnalytic:
         full_path = os.path.join(folder, graphic_name)
         plt.savefig(full_path)
     
-    def LinearDiffusionNGraph(self, n_final: str, N: int, cpp_file_name: str,
+    def LinearDiffusionNGraph(self, n_final: float, N: int, cpp_file_name: str,
                         json_file_name: str, results_file_name: str, graphic_name: str):
         '''
         Метод аналогичен предыдущему, но линеаризует зависимость 
         диффузии от концентрации как D(1/n), возвращает коэффициент наклона
         '''
-
         folder = "../build"
         full_path = os.path.join(folder, cpp_file_name)
 
@@ -295,7 +295,7 @@ class DiffusionAnalytic:
         plt.savefig(full_path)
         return coeffs[0]
 
-    def LogarifmicDiffusionNGraph(self, n_final: str, N: int, cpp_file_name: str,
+    def LogarifmicDiffusionNGraph(self, n_final: float, N: int, cpp_file_name: str,
                         json_file_name: str, results_file_name: str, graphic_name: str):
         '''
         Метод аналогичен предыдущему, но линеаризует зависимость 
@@ -340,7 +340,7 @@ class DiffusionAnalytic:
         plt.savefig(full_path)
         return coeffs[0]
 
-    def DiffusionMuGraph(self, mu_final: str, n: int, cpp_file_name: str,
+    def DiffusionMuGraph(self, mu_final: float, n: int, cpp_file_name: str,
                         json_file_name: str, results_file_name: str, graphic_name: str):
         '''
         Аналогично предыдущим методам, только строит 
@@ -349,11 +349,11 @@ class DiffusionAnalytic:
         folder = "../build"
         full_path = os.path.join(folder, cpp_file_name)
 
-        mu = np.linspace(self.mu_back, mu_final, n)
+        mu = np.linspace(self.mu_light, mu_final, n)
         D = []
         for i in mu:
             self.config["Light gas"]["mu"] = i
-        
+
             with open(self.json_file, 'w') as f:
                 json.dump(self.config, f, indent=4)
             
@@ -377,16 +377,16 @@ class DiffusionAnalytic:
         full_path = os.path.join(folder, graphic_name)
         plt.savefig(full_path)
 
-    def LogarifmicDiffusionMuGraph(self, mu_final: str, n: int, cpp_file_name: str,
+    def LogarifmicDiffusionMuGraph(self, mu_final: float, n: int, cpp_file_name: str,
                         json_file_name: str, results_file_name: str, graphic_name: str):
         '''
         Аналогично предыдущим методам, только строит 
-        график зависимости ln(D)(ln(n))
+        график зависимости ln(D)(ln(mu))
         '''
         folder = "../build"
         full_path = os.path.join(folder, cpp_file_name)
 
-        mu = np.linspace(self.mu_back, mu_final, n)
+        mu = np.linspace(self.mu_light, mu_final, n)
         D = []
         for i in mu:
             self.config["Light gas"]["mu"] = i
@@ -406,8 +406,11 @@ class DiffusionAnalytic:
         D = np.array(D)
         D = np.log(D)
         mu = np.log(mu)
-        plt.plot(mu, D)
-
+        plt.scatter(mu, D)
+        x = np.linspace(mu[0], mu[-1], 100)
+        coefs = np.polyfit(mu, D, 1)
+        y = np.polyval(coefs, x)
+        plt.plot(x, y)
         plt.title("График зависимости ln(D)(ln(mu))")
         plt.ylabel("ln(D)")
         plt.xlabel("ln(mu)")
@@ -415,6 +418,45 @@ class DiffusionAnalytic:
         folder = 'graphics/'
         full_path = os.path.join(folder, graphic_name)
         plt.savefig(full_path)
+        return coefs[0]
+
+    def LinearDiffusionMuGraph(self, mu_final: float, n: int, cpp_file_name: str,
+                        json_file_name: str, results_file_name: str, graphic_name: str):
+        folder = "../build"
+        full_path = os.path.join(folder, cpp_file_name)
+
+        mu = np.linspace(self.mu_light, mu_final, n)
+        D = []
+        for i in mu:
+            self.config["Light gas"]["mu"] = i
+        
+            with open(self.json_file, 'w') as f:
+                json.dump(self.config, f, indent=4)
+            
+            result = subprocess.run(
+                [full_path],
+                capture_output=True,
+                text=True
+            )
+            self.__init__(json_file_name, results_file_name)
+            D.append(self.GetD)
+        
+        mu = mu * self.mu_back / (self.mu_back + mu)
+        D = np.array(D)
+        mu = np.power(mu, -0.5)
+        plt.scatter(mu, D)
+        x = np.linspace(mu[0], mu[-1], 100)
+        coefs = np.polyfit(mu, D, 1)
+        y = np.polyval(coefs, x)
+        plt.plot(x, y)
+        plt.title("График зависимости (D)(1/mu^0.5)")
+        plt.ylabel("D")
+        plt.xlabel("mu^-0.5")
+
+        folder = 'graphics/'
+        full_path = os.path.join(folder, graphic_name)
+        plt.savefig(full_path)
+        return coefs[0]
 
 diff = DiffusionAnalytic("config.json", "results.csv")
-print(diff.LogarifmicDiffusionTemperatureGraph(1000, 10, "main", "config.json", "results.csv", "temp"))
+print(diff.LogarifmicDiffusionMuGraph(0.3, 10, "main", "config.json", "results.csv", "График зависимости D(mu0.5).png"))

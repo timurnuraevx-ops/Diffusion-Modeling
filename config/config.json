@@ -1,6 +1,6 @@
 {
     "BackgroundGas": {
-        "T": 100.0,
+        "T": 300.0,
         "mu": 0.029,
         "n": 2.41434e+25
     },
@@ -9,20 +9,20 @@
         "dt": 1e-12,
         "N": 10000,
         "iterations": 1000,
-        "Step": 1000
+        "Step": 10
     },
     "Light gas": {
-        "T": 100.0,
+        "T": 300.0,
         "mu": 0.004
     },
-    "Simulation": "Point source",
+    "Simulation": "Flat source",
     "Source": {
         "a": 1e-06,
         "b": 1e-06,
         "c": 1e-06
     },
     "gas-kinetic cross-section": {
-        "omega": 0.2,
+        "omega": 0.3,
         "T0": 273,
         "sigma0": 3.33e-19
     }
